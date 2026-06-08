@@ -95,6 +95,8 @@ Ejecute:
 docker compose exec web python app/manage.py migrate
 ```
 
+El contenedor `web` tambien ejecuta las migraciones automaticamente al iniciar. Este comando sigue siendo util cuando se agregan nuevas migraciones durante desarrollo.
+
 ## Crear superusuario
 
 Ejecute:
