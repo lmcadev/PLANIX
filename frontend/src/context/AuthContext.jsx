@@ -4,7 +4,7 @@ import { authApi } from "../api/authApi";
 import { usersApi } from "../api/usersApi";
 import { tokenStorage } from "../utils/tokenStorage";
 import { AUTH_LOGOUT_EVENT } from "../api/httpClient";
-import { hasAnyRole } from "../constants/roles";
+import { hasAnyPermission, hasAnyRole } from "../constants/roles";
 
 export const AuthContext = createContext(null);
 
@@ -72,6 +72,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const userHasAnyRole = useCallback((allowedRoles) => hasAnyRole(user?.roles, allowedRoles), [user]);
+  const userHasAnyPermission = useCallback(
+    (allowedPermissions) => hasAnyPermission(user?.roles, allowedPermissions),
+    [user],
+  );
 
   const value = useMemo(
     () => ({
@@ -82,8 +86,9 @@ export function AuthProvider({ children }) {
       register,
       logout,
       userHasAnyRole,
+      userHasAnyPermission,
     }),
-    [user, isLoading, login, register, logout, userHasAnyRole],
+    [user, isLoading, login, register, logout, userHasAnyRole, userHasAnyPermission],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

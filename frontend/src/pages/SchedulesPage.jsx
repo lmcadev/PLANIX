@@ -10,17 +10,19 @@ import PageHeader from "../components/molecules/PageHeader";
 import Button from "../components/atoms/Button";
 import Spinner from "../components/atoms/Spinner";
 import Alert from "../components/atoms/Alert";
-import { ROLE_NAMES } from "../constants/roles";
+import { PERMISSION_CODES, ROLE_NAMES } from "../constants/roles";
 import { ROUTES } from "../constants/routes";
 
 export default function SchedulesPage() {
   const { schedules, isLoading, error, removeSchedule, updateOperationalStatus } = useSchedules();
   const { users } = useUsers();
-  const { user, userHasAnyRole } = useAuth();
+  const { user, userHasAnyPermission, userHasAnyRole } = useAuth();
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const canManage = userHasAnyRole([ROLE_NAMES.ADMIN, ROLE_NAMES.COORDINATOR]);
+  const canManage =
+    userHasAnyRole([ROLE_NAMES.ADMIN, ROLE_NAMES.COORDINATOR]) ||
+    userHasAnyPermission([PERMISSION_CODES.SCHEDULES_WRITE]);
 
   const handleConfirmDelete = async () => {
     setIsDeleting(true);

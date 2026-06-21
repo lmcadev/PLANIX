@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: planix_postgres
+    restart: unless-stopped
+    env_file:
+      - ./.env.production
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: planix_backend
+    restart: unless-stopped
+    command: gunicorn config.wsgi:application --chdir app --bind 0.0.0.0:8000 --workers 3 --timeout 60
+    env_file:
+      - ./.env.production
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    container_name: planix_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_BIND:-127.0.0.1}:${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

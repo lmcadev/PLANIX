@@ -1,0 +1,41 @@
+# Local deploy secrets and generated production env files.
+.deploy-secrets/
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Private keys and certificates.
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# Dependency and build outputs.
+node_modules/
+dist/
+build/
+staticfiles/
+media/
+
+# Python and test caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Local database and OS/editor files.
+*.sqlite3
+*.db
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
