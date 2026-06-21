@@ -146,6 +146,8 @@ http://localhost:8000/api/schema/
 - Frontend: `frontend/README.md`
 - Estrategia de pruebas: `backend/TESTING_STRATEGY.md`
 
+
+
 ## Nota
 
 Este código fue desarrollado como parte de la materia Integración Continua Grupo B02, Grupo de trabajo 10, con el objetivo de aplicar prácticas de automatización, pruebas y despliegue dentro de un entorno académico.
