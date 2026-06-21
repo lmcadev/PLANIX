@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       run_initializer:
-        description: "Run database initializer after deploy"
+        description: "Corre el inizializador (solo para la primera vez) de la base de datos y el servidor. No es necesario correrlo en despliegues posteriores."
         required: true
         default: "false"
         type: choice

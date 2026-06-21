@@ -146,56 +146,7 @@ http://localhost:8000/api/schema/
 - Frontend: `frontend/README.md`
 - Estrategia de pruebas: `backend/TESTING_STRATEGY.md`
 
-## Despliegue en VPS con GitHub Actions
 
-El repositorio incluye el workflow `.github/workflows/deploy.yml` para desplegar automaticamente al hacer push a `main`.
-
-### Requisitos del VPS
-
-- Docker y Docker Compose instalados.
-- Git instalado.
-- Un usuario con acceso SSH y permisos para ejecutar Docker.
-- La llave publica de despliegue agregada en `~/.ssh/authorized_keys` del usuario del VPS.
-
-### Secrets requeridos en GitHub
-
-Configurar en `Settings > Secrets and variables > Actions`:
-
-```text
-VPS_HOST=ip-o-dominio-del-vps
-VPS_USER=usuario-ssh
-VPS_PORT=22
-VPS_SSH_KEY=llave-privada-ssh
-DEPLOY_PATH=/opt/planix
-PRODUCTION_ENV=contenido-completo-del-archivo-.env.production
-```
-
-Usar `.env.production.example` como base para `PRODUCTION_ENV`. Para `planix.lmcadev.com`, mantener:
-
-```text
-ALLOWED_HOSTS=planix.lmcadev.com,72.61.1.242
-CORS_ALLOWED_ORIGINS=https://planix.lmcadev.com
-CSRF_TRUSTED_ORIGINS=https://planix.lmcadev.com
-VITE_API_BASE_URL=/api
-FRONTEND_BIND=127.0.0.1
-FRONTEND_PORT=8080
-```
-
-### Primer despliegue
-
-1. Crear los secrets anteriores.
-2. Hacer push a `main` o ejecutar manualmente el workflow `Deploy to VPS`.
-3. En la primera ejecucion manual, seleccionar `run_initializer=true` si se desea poblar la base con datos iniciales.
-
-El compose de produccion usa `docker-compose.prod.yml`, levanta PostgreSQL privado, backend con Gunicorn y frontend con Nginx. Por defecto publica el frontend solo en `127.0.0.1:8080`, pensado para que el proxy inverso del VPS atienda `https://planix.lmcadev.com` y reenvie a `http://127.0.0.1:8080`.
-
-Para este VPS:
-
-```text
-VPS_HOST=72.61.1.242
-VPS_USER=lmcadev-planix
-reverse_proxy_url=http://127.0.0.1:8080
-```
 
 ## Nota
 
