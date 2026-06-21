@@ -31,8 +31,12 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
+          set -eu
+          : "${VPS_HOST:?Missing GitHub secret VPS_HOST}"
+          : "${VPS_SSH_KEY:?Missing GitHub secret VPS_SSH_KEY}"
+          VPS_PORT="${VPS_PORT:-22}"
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/planix_deploy_key
           chmod 600 ~/.ssh/planix_deploy_key
@@ -42,21 +46,31 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
+          set -eu
+          : "${VPS_HOST:?Missing GitHub secret VPS_HOST}"
+          : "${VPS_USER:?Missing GitHub secret VPS_USER}"
+          VPS_PORT="${VPS_PORT:-22}"
           scp -P "$VPS_PORT" -i ~/.ssh/planix_deploy_key scripts/deploy.sh "$VPS_USER@$VPS_HOST:/tmp/planix-deploy.sh"
 
       - name: Deploy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           REPOSITORY_URL: https://github.com/${{ github.repository }}.git
           DEPLOY_BRANCH: main
           ENV_FILE_CONTENT: ${{ secrets.PRODUCTION_ENV }}
           RUN_INITIALIZER: ${{ github.event_name == 'workflow_dispatch' && inputs.run_initializer || 'false' }}
         run: |
+          set -eu
+          : "${VPS_HOST:?Missing GitHub secret VPS_HOST}"
+          : "${VPS_USER:?Missing GitHub secret VPS_USER}"
+          : "${DEPLOY_PATH:?Missing GitHub secret DEPLOY_PATH}"
+          : "${ENV_FILE_CONTENT:?Missing GitHub secret PRODUCTION_ENV}"
+          VPS_PORT="${VPS_PORT:-22}"
           ssh -p "$VPS_PORT" -i ~/.ssh/planix_deploy_key "$VPS_USER@$VPS_HOST" \
             "DEPLOY_PATH='$DEPLOY_PATH' REPOSITORY_URL='$REPOSITORY_URL' DEPLOY_BRANCH='$DEPLOY_BRANCH' RUN_INITIALIZER='$RUN_INITIALIZER' ENV_FILE_CONTENT='$(printf "%s" "$ENV_FILE_CONTENT" | base64 -w 0)' sh -s" <<'REMOTE'
           set -eu
