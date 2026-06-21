@@ -32,16 +32,21 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
         run: |
           missing=0
-          for name in VPS_HOST VPS_USER VPS_SSH_KEY DEPLOY_PATH PRODUCTION_ENV; do
+          for name in VPS_HOST VPS_USER DEPLOY_PATH PRODUCTION_ENV; do
             if [ -z "$(eval "printf '%s' \"\$$name\"")" ]; then
               echo "::error::Missing GitHub secret: $name"
               missing=1
             fi
           done
+          if [ -z "$VPS_SSH_KEY" ] && [ -z "$VPS_SSH_KEY_B64" ]; then
+            echo "::error::Missing GitHub secret: VPS_SSH_KEY or VPS_SSH_KEY_B64"
+            missing=1
+          fi
           if [ "$missing" -ne 0 ]; then
             exit 1
           fi
@@ -51,12 +56,17 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
           VPS_PORT="${VPS_PORT:-22}"
           echo "Configuring SSH for $VPS_HOST:$VPS_PORT"
           mkdir -p ~/.ssh
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/planix_deploy_key
+          if [ -n "$VPS_SSH_KEY_B64" ]; then
+            printf '%s' "$VPS_SSH_KEY_B64" | base64 -d > ~/.ssh/planix_deploy_key
+          else
+            printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/planix_deploy_key
+          fi
           chmod 600 ~/.ssh/planix_deploy_key
           ssh-keyscan -T 15 -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
 
