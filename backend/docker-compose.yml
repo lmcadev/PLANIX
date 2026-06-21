@@ -12,6 +12,15 @@ services:
     depends_on:
       - db
 
+  front:
+    build: ../frontend
+    container_name: planix_frontend
+    ports:
+      - "5173:5173"
+    env_file:
+      - ../frontend/.env.example
+    depends_on:
+      - web
   db:
     image: postgres:16-alpine
     container_name: planix_postgres
