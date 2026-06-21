@@ -27,20 +27,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate deploy secrets
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
+        run: |
+          missing=0
+          for name in VPS_HOST VPS_USER VPS_SSH_KEY DEPLOY_PATH PRODUCTION_ENV; do
+            if [ -z "$(eval "printf '%s' \"\$$name\"")" ]; then
+              echo "::error::Missing GitHub secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          echo "Deploy secrets are present."
+
       - name: Configure SSH
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
-          set -eu
-          : "${VPS_HOST:?Missing GitHub secret VPS_HOST}"
-          : "${VPS_SSH_KEY:?Missing GitHub secret VPS_SSH_KEY}"
           VPS_PORT="${VPS_PORT:-22}"
+          echo "Configuring SSH for $VPS_HOST:$VPS_PORT"
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/planix_deploy_key
           chmod 600 ~/.ssh/planix_deploy_key
-          ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 15 -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Upload deploy script
         env:
@@ -48,10 +66,8 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
-          set -eu
-          : "${VPS_HOST:?Missing GitHub secret VPS_HOST}"
-          : "${VPS_USER:?Missing GitHub secret VPS_USER}"
           VPS_PORT="${VPS_PORT:-22}"
+          echo "Uploading deploy script to $VPS_USER@$VPS_HOST:$VPS_PORT"
           scp -P "$VPS_PORT" -i ~/.ssh/planix_deploy_key scripts/deploy.sh "$VPS_USER@$VPS_HOST:/tmp/planix-deploy.sh"
 
       - name: Deploy
@@ -65,12 +81,8 @@ jobs:
           ENV_FILE_CONTENT: ${{ secrets.PRODUCTION_ENV }}
           RUN_INITIALIZER: ${{ github.event_name == 'workflow_dispatch' && inputs.run_initializer || 'false' }}
         run: |
-          set -eu
-          : "${VPS_HOST:?Missing GitHub secret VPS_HOST}"
-          : "${VPS_USER:?Missing GitHub secret VPS_USER}"
-          : "${DEPLOY_PATH:?Missing GitHub secret DEPLOY_PATH}"
-          : "${ENV_FILE_CONTENT:?Missing GitHub secret PRODUCTION_ENV}"
           VPS_PORT="${VPS_PORT:-22}"
+          echo "Deploying branch $DEPLOY_BRANCH to $DEPLOY_PATH"
           ssh -p "$VPS_PORT" -i ~/.ssh/planix_deploy_key "$VPS_USER@$VPS_HOST" \
             "DEPLOY_PATH='$DEPLOY_PATH' REPOSITORY_URL='$REPOSITORY_URL' DEPLOY_BRANCH='$DEPLOY_BRANCH' RUN_INITIALIZER='$RUN_INITIALIZER' ENV_FILE_CONTENT='$(printf "%s" "$ENV_FILE_CONTENT" | base64 -w 0)' sh -s" <<'REMOTE'
           set -eu
