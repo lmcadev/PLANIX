@@ -4,7 +4,7 @@ PLANIX es una aplicacion para gestion de agenda y tareas de ingenieros. Esta ver
 
 ## Estado del proyecto
 
-Actualmente el repositorio incluye solo backend. No hay frontend implementado por ahora.
+Actualmente solo se encuentra implementada la capa backend. Sin embargo, los endpoints pueden ser consultados y probados a través de Swagger UI y mediante la colección de Postman que se comparte.
 
 ## Estructura
 
@@ -40,6 +40,14 @@ backend/
 - Documentacion Swagger/OpenAPI.
 - Docker Compose con PostgreSQL.
 - Suite de pruebas unitarias, integracion y E2E API.
+
+## Instrucciones para clonar repositorio
+
+- Seleccionar un directorio
+- ejecutar el comando
+```bash
+   git clone https://github.com/lmcadev/PLANIX.git
+```
 
 ## Ejecucion local
 
@@ -115,3 +123,7 @@ http://localhost:8000/api/schema/
 
 - Backend: `backend/README.md`
 - Estrategia de pruebas: `backend/TESTING_STRATEGY.md`
+
+## Nota
+
+Este código fue desarrollado como parte de la materia Integración Continua Grupo B02, Grupo de trabajo 10, con el objetivo de aplicar prácticas de automatización, pruebas y despliegue dentro de un entorno académico.
