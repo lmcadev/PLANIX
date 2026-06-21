@@ -82,7 +82,7 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           REPOSITORY_URL: https://github.com/${{ github.repository }}.git
-          DEPLOY_BRANCH: main
+          DEPLOY_BRANCH: ${{ github.ref_name }}
           ENV_FILE_CONTENT: ${{ secrets.PRODUCTION_ENV }}
           RUN_INITIALIZER: ${{ github.event_name == 'workflow_dispatch' && inputs.run_initializer || 'false' }}
         run: |
