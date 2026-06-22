@@ -1,9 +1,11 @@
 name: Deploy to VPS
 
+# El workflow se ejecuta automaticamente al publicar cambios en main.
 on:
   push:
     branches:
       - main
+  # Tambien permite lanzar el despliegue manualmente desde GitHub Actions.
   workflow_dispatch:
     inputs:
       run_initializer:
@@ -15,18 +17,23 @@ on:
           - "false"
           - "true"
 
+# Evita que dos despliegues de produccion corran al mismo tiempo.
 concurrency:
   group: planix-production
   cancel-in-progress: true
 
 jobs:
   deploy:
+    # Runner temporal de GitHub donde se ejecutan los pasos del pipeline.
     runs-on: ubuntu-latest
 
     steps:
+      # Descarga el codigo del repositorio en el runner.
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Falla temprano si falta algun secreto requerido para conectarse al VPS o
+      # generar el archivo .env.production.
       - name: Validate deploy secrets
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -51,6 +58,8 @@ jobs:
           fi
           echo "Deploy secrets are present."
 
+      # Reconstruye la llave privada SSH desde el secreto en base64 y registra el
+      # host remoto en known_hosts para que ssh/scp puedan conectarse.
       - name: Configure SSH
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -65,6 +74,8 @@ jobs:
           ssh-keygen -y -f ~/.ssh/planix_deploy_key > /dev/null
           ssh-keyscan -T 15 -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
 
+      # Copia el script de despliegue al VPS. El script se versiona en el repo,
+      # pero se ejecuta desde /tmp para usar siempre la version del commit actual.
       - name: Upload deploy script
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -75,6 +86,9 @@ jobs:
           echo "Uploading deploy script to $VPS_USER@$VPS_HOST:$VPS_PORT"
           scp -P "$VPS_PORT" -i ~/.ssh/planix_deploy_key scripts/deploy.sh "$VPS_USER@$VPS_HOST:/tmp/planix-deploy.sh"
 
+      # Entra por SSH al VPS, envia las variables necesarias y ejecuta
+      # scripts/deploy.sh para actualizar codigo, crear .env.production y levantar
+      # docker-compose.prod.yml.
       - name: Deploy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -88,9 +102,13 @@ jobs:
         run: |
           VPS_PORT="${VPS_PORT:-22}"
           echo "Deploying branch $DEPLOY_BRANCH to $DEPLOY_PATH"
+          # ENV_FILE_CONTENT viaja codificado en base64 para preservar saltos de
+          # linea y caracteres especiales del archivo .env.production.
           ssh -p "$VPS_PORT" -i ~/.ssh/planix_deploy_key "$VPS_USER@$VPS_HOST" \
             "DEPLOY_PATH='$DEPLOY_PATH' REPOSITORY_URL='$REPOSITORY_URL' DEPLOY_BRANCH='$DEPLOY_BRANCH' RUN_INITIALIZER='$RUN_INITIALIZER' ENV_FILE_CONTENT='$(printf "%s" "$ENV_FILE_CONTENT" | base64 -w 0)' sh -s" <<'REMOTE'
           set -eu
+          # Ya en el VPS, se decodifica el .env y se delega todo el despliegue al
+          # script subido en el paso anterior.
           export ENV_FILE_CONTENT="$(printf "%s" "$ENV_FILE_CONTENT" | base64 -d)"
           sh /tmp/planix-deploy.sh
           REMOTE

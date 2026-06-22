@@ -1,4 +1,6 @@
 services:
+  # Base de datos local. Usa la imagen oficial de PostgreSQL y conserva los datos
+  # en un volumen Docker para que no se pierdan al recrear el contenedor.
   db:
     image: postgres:16-alpine
     container_name: planix_postgres
@@ -9,10 +11,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # API Django para desarrollo. Se construye desde backend/Dockerfile y ejecuta
+  # runserver para facilitar recarga y depuracion local.
   backend:
     build: ./backend
     container_name: planix_backend
     command: python app/manage.py runserver 0.0.0.0:8000
+    # Monta el codigo fuente dentro del contenedor para trabajar sin reconstruir
+    # la imagen ante cada cambio de backend.
     volumes:
       - ./backend:/code
     ports:
@@ -22,9 +28,13 @@ services:
     depends_on:
       - db
 
+  # Interfaz React/Vite para desarrollo. Expone el servidor dev de Vite y apunta
+  # sus llamadas HTTP al backend local.
   frontend:
     build: ./frontend
     container_name: planix_frontend
+    # Mantiene el codigo sincronizado, pero preserva node_modules dentro del
+    # contenedor para evitar conflictos con dependencias del host.
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -36,4 +46,5 @@ services:
       - backend
 
 volumes:
+  # Volumen persistente usado por PostgreSQL.
   postgres_data:

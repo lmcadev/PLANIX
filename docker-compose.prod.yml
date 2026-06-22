@@ -1,4 +1,6 @@
 services:
+  # Base de datos de produccion. No publica el puerto al exterior; solo la usan
+  # los contenedores de la misma red Docker.
   db:
     image: postgres:16-alpine
     container_name: planix_postgres
@@ -7,12 +9,14 @@ services:
       - ./.env.production
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # Verifica que PostgreSQL acepte conexiones antes de iniciar el backend.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # API Django en produccion. Se ejecuta con Gunicorn en lugar de runserver.
   backend:
     build:
       context: ./backend
@@ -21,14 +25,19 @@ services:
     command: gunicorn config.wsgi:application --chdir app --bind 0.0.0.0:8000 --workers 3 --timeout 60
     env_file:
       - ./.env.production
+    # Espera a que el healthcheck de PostgreSQL marque la base como lista.
     depends_on:
       db:
         condition: service_healthy
 
+  # Frontend productivo. Compila React con Vite y sirve los archivos finales con
+  # Nginx; Nginx tambien hace proxy de /api hacia el backend.
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      # VITE_API_BASE_URL se inyecta en tiempo de build porque Vite lo deja
+      # embebido en el bundle final del navegador.
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
     container_name: planix_frontend
@@ -39,4 +48,5 @@ services:
       - backend
 
 volumes:
+  # Datos persistentes de PostgreSQL en produccion.
   postgres_data:

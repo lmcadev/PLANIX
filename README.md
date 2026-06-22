@@ -147,6 +147,58 @@ http://localhost:8000/api/schema/
 - Estrategia de pruebas: `backend/TESTING_STRATEGY.md`
 
 
+El flujo local es: 
+
+Usuario -> Frontend React/Vite -> Backend Django API -> PostgreSQL 
+
+
+
+Diagrama Simple Para La Exposición 
+
+Usuario 
+ | 
+ v 
+Navegador 
+ | 
+ v 
+Frontend React 
+ | 
+ v 
+Nginx producción 
+ |----------------------| 
+ |                      | 
+ v                      v 
+Archivos estáticos       /api, /admin, /static 
+                        | 
+                        v 
+                  Backend Django + DRF 
+                        | 
+                        v 
+                   PostgreSQL 
+
+Y para deploy: 
+
+Developer 
+ | 
+ v 
+git push main 
+ | 
+ v 
+GitHub Actions 
+ | 
+ v 
+SSH al VPS 
+ | 
+ v 
+scripts/deploy.sh 
+ | 
+ v 
+docker compose -f docker-compose.prod.yml up -d --build 
+ | 
+ v 
+Aplicación actualizada 
+
+
 
 ## Nota
 
